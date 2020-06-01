@@ -19,8 +19,8 @@ EL "input#id" @INPUT("test")
 EL "input#ps" @INPUT("1234")
 EL "input#log.login" @CLICK
 
-$NEWS = ELS "#NM_NEWSSTAND_DEFAULT_THUMB .thumb_box img"
-LOOP NEWS
+$news = ELS "#NM_NEWSSTAND_DEFAULT_THUMB .thumb_box img"
+LOOP $news
   $alt = ATR:alt
   
   IF $alt = "YTN"
