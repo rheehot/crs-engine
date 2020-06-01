@@ -41,3 +41,4 @@ END
 - IF/ELSE/END: If condition
 - LOOP/END: Loop iterable or condition
 - DOWNLOAD: Download resource (eg. image, html)
+- @{ACTION}: Click, Touch, Input, ...
