@@ -1,0 +1,5 @@
+logs/*.log
+data/images/
+data/info/
+env/
+test/
