@@ -3,3 +3,7 @@ data/images/
 data/info/
 env/
 test/
+
+# Python cache
+__pycache__
+*.pyc
