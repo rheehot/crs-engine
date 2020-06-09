@@ -211,8 +211,7 @@ def do_work(args):
         # 앤아더스토리즈 크롤링 모듈 호출
         if p_brand == 'stories':
             # stories.getData(p_site_url, _SAVE_PATH_, p_job_id)
-            # stories.getData(args, _SAVE_PATH_)
-            pass
+            stories.getData(args, _SAVE_PATH_)
 
         # 자라 크롤링 모듈 호출            
         elif p_brand == 'zara':

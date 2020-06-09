@@ -24,37 +24,13 @@ if __name__ == '__main__' and __package__ is None:
     sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
     print(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
+
+from app.common.userAction import evtMouseDown
 from app.common import chromeSet
     
 
 # 파일명 : 날짜_성별_브랜드_카테고리_상품명_번호
 _COLLECT_DATE_ = datetime.datetime.now().strftime('%Y%m%d')
-
-def evtMouseDown(p_driver):
-    
-    # 무한 스크롤 적용 
-    SCROLL_PAUSE_TIME = 2
-
-    # Get scroll height
-    last_height = p_driver.execute_script("return document.body.scrollHeight")
-
-    while True:
-        # Scroll down to bottom
-        p_driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-
-        # Wait to load page
-        time.sleep(SCROLL_PAUSE_TIME)
-        p_driver.execute_script("window.scrollTo(0, document.body.scrollHeight-50);")
-        time.sleep(SCROLL_PAUSE_TIME)
-
-        # Calculate new scroll height and compare with last scroll height
-        new_height = p_driver.execute_script("return document.body.scrollHeight")
-
-        if new_height == last_height:
-            break
-
-        last_height = new_height       
-        
 
 def getData(p_args, p_savepath):
 
@@ -112,6 +88,7 @@ def getData(p_args, p_savepath):
         product_list = []
         # TODO: 상품 정보 추출 로직 작성 필요
         for slink in link_list:
+            print(slink)
             product_list.append({
                 "name": '',
                 "color": '',
