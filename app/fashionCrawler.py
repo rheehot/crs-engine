@@ -41,6 +41,33 @@ _TEST_MODE_ = True
 _SAVE_PATH_ = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../data/")
 
 class ImgCrawler():
+    """
+    이미지 크롤러
+
+    Attributes
+    ----------
+    logger : Logger
+        로거
+    brand_list : list
+
+    brand_list_nm : object
+
+    brand_site_list : object
+
+    brand_site_sex_list : object
+
+    brand_site_categori_list : object
+
+    site_total_count : int
+
+    Methods
+    -------
+    init()
+        크롤링 설정 기준으로 초기 세팅 (데이터 저장 폴더 생성 등)
+
+    crawler_task()
+        브랜드별 크롤링 설정 매핑, 멀티프로세싱 풀 생성 및 작업 수행
+    """
     
     
     def __init__(self):
@@ -160,6 +187,14 @@ class ImgCrawler():
     
 
 def do_work(args):
+    """
+    이미지 크롤링 작업 수행
+
+    Parameters
+    ----------
+    args : object
+        크롤링 설정 객체
+    """
     
     try:
         print('START_JOB ID: %s, %s' % (args['job_id'], args['brand_nm']))
@@ -176,7 +211,8 @@ def do_work(args):
         # 앤아더스토리즈 크롤링 모듈 호출
         if p_brand == 'stories':
             # stories.getData(p_site_url, _SAVE_PATH_, p_job_id)
-            stories.getData(args, _SAVE_PATH_)
+            # stories.getData(args, _SAVE_PATH_)
+            pass
 
         # 자라 크롤링 모듈 호출            
         elif p_brand == 'zara':
