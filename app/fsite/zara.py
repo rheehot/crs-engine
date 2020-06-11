@@ -10,10 +10,14 @@ import os
 import time
 import csv
 import datetime
+import logging
+import logging.handlers
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from urllib.request import urlopen
 import urllib.request
+import traceback
+from multiprocessing import current_process
 
 import sys
 import io
@@ -24,7 +28,7 @@ if __name__ == '__main__' and __package__ is None:
     sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
     print(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-
+from app.common.util import ref_safe, idx_safe, get_webdriver_wait, text_is_not_empty
 from app.common.userAction import evtMouseDown
 from app.common import chromeSet
     
@@ -33,11 +37,10 @@ from app.common import chromeSet
 _COLLECT_DATE_ = datetime.datetime.now().strftime('%Y%m%d')
 
 def getData(p_args, p_savepath):
-
+    name = current_process().name
     try:
-        
-        # print(p_args)
-        
+        logger = logging.getLogger(__name__)
+
         p_job_id = p_args['job_id']
         p_url = p_args['site_url']
         p_brand = p_args['brand']
@@ -46,116 +49,104 @@ def getData(p_args, p_savepath):
         p_product_categori = p_args['product_categori']
         
         driver = webdriver.Chrome(executable_path=chromeSet.DRIVER_PATH, options=chromeSet.options)
-        
         driver.get(p_url)
     
-        # 3초 웹페이지 로딩
+        # 웹 페이지 로딩 시 3초간 대기함
         driver.implicitly_wait(3)
-        
-        # 마우스 스크롤 처리
-        evtMouseDown(driver)
-        
-        
-        
 
-        # elements = driver.find_elements_by_css_selector('#products > div > ul > li > a')
+        # 상품 목록 수집
         elements = driver.find_elements_by_css_selector('#products > div > ul > li > a')
-        # elements2 = driver.find_elements_by_css_selector('#products > div._groups-wrap > ul > li > div')
+        logger.info('상품 개수: {}'.format(len(elements)))
 
-        # print(driver.page_source)
-        # print(elements)
-
-        print('상품 개수: {}'.format(len(elements)))
-        # print('상품 설명 개수: {}'.format(len(elements2)))
-
-        # link_str = elements[0].get_attribute('href')
         link_list = []
         for el in elements:
             link_list.append(el.get_attribute('href'))
-            # print(el.get_attribute('href'))
-
-        print(len(link_list))
         
         # link 중복값 제거 
         link_list = list(set(link_list))
-        print(len(link_list))
-        
-        
-        
-        
+        logger.info('Targets: {}'.format(len(link_list)))
+
+        wait = get_webdriver_wait(driver)
         
         # 상품 설명 추출
+        total_cnt = 0
         product_list = []
-        # TODO: 상품 정보 추출 로직 작성 필요
         for slink in link_list:
-            print(slink)
-            product_list.append({
-                "name": '',
-                "color": '',
-                "price": ''
-            })
-        '''
-        
-        
-        product_list.append({
-            "name": '',
-            "color": '',
-            "price": ''
-        })
-        
-        info_file_nm = _COLLECT_DATE_ + '_' + p_product_sex + '_' + p_brand + '_' + p_product_categori + '_' + p_job_id + '.csv'
-        
-        with open(p_savepath + '/info/' + p_brand + '/' + info_file_nm, mode='w', encoding="utf-8") as product_infos:
-            product_writer = csv.writer(product_infos)
-    
-            for list in product_list:
-                product_writer.writerow([list["name"], list["color"], list["price"]])
-        
-        
-        '''
-        
-        
-        
-
-        total_cnt=0
-        for slink in link_list:
-            # print(slink)
-            
             driver.get(slink)
 
-            driver.implicitly_wait(5)
+            # 상품 가격의 텍스트가 표시될 때까지 명시적으로 최대 5초 대기
+            # https://selenium-python.readthedocs.io/api.html#module-selenium.webdriver.support.expected_conditions
+            wait.until(
+                text_is_not_empty('div.price > span')
+            )
+
+            # 상품 정보 추출
+            name = driver.find_elements_by_css_selector('h1.product-name')
+            color = driver.find_elements_by_css_selector('p.product-color > span._colorName')
+            price = driver.find_elements_by_css_selector('div.price > span')
             
-            #main-images > div:nth-child(2) > a > img.image-big._img-zoom._main-image
+            if isinstance(name, list):
+                name = idx_safe(name, 0)
+            
+            if isinstance(color, list):
+                color = idx_safe(color, 0)
+
+            if isinstance(price, list):
+                price = idx_safe(price, 0)
+ 
+            name = ref_safe(name, 'text')
+            color = ref_safe(color, 'text')
+            price = ref_safe(price, 'text')
+
+            # 상품 이름이 없는 경우 문제가 발생한 것으로 판단하고 다음 상품 진행
+            if not price:
+                logger.warning('No product name: {}'.format(slink))
+                continue
+
+            product_data = {
+                "name": name,
+                "color": color,
+                "price": price
+            }
+            product_list.append(product_data)
+
+            logger.info('({}, {}, {}):{}'.format(name, color, price, slink))
+            info_file_nm = _COLLECT_DATE_ + '_' + p_product_sex + '_' + p_brand + '_' + p_product_categori + '_' + p_job_id + '.csv'
+
+            # 이미지 영역 추출
             sub_elements = driver.find_elements_by_css_selector('#main-images > div > a > img.image-big._img-zoom._main-image')
 
-            i=0
+            # 이미지 다운로드
+            i = 0
             for sub_el in sub_elements:
-
                 img_src = sub_el.get_attribute('src')
-                print(img_src)
-
                 req = urllib.request.Request(img_src, headers={'User-Agent': 'Mozilla/5.0'})
-
-                t = urlopen(req).read()
+                res = urlopen(req).read()
                 
-                img_file_nm = _COLLECT_DATE_ + '_' + p_product_sex + '_' + p_brand + '_' + p_product_categori + '_' + product_list[i].get('name') + '_' + str(i+1) + '.jpg'
+                img_file_nm = _COLLECT_DATE_ + '_' + p_product_sex + '_' + p_brand + '_' + p_product_categori + '_' + product_data['name'] + '_' + str(i+1) + '.jpg'
                 filename = p_savepath + '/images/' + p_brand + '/' + img_file_nm
 
                 with open(filename.encode('utf-8'), "wb") as f:
-                    f.write(t)
-                i=i+1
+                    f.write(res)
 
-            total_cnt = total_cnt + 1
+                i += 1
+
+            # 크롤링한 이미지 수 추가
+            total_cnt += 1
         
-        
-        
-        
+        # Save data as csv
+        with open(p_savepath + '/info/' + p_brand + '/' + info_file_nm, mode='a', encoding="utf-8") as product_infos:
+            product_writer = csv.writer(product_infos)
+            for prod in product_list:
+                product_writer.writerow([prod['name'], prod['color'], prod['price']])
+
+        logger.info('END, ' + str(total_cnt))
     except Exception as ex:
         print('ERROR [zara - getData]')
-        print(ex)
+        traceback.print_exc()
     finally:
         driver.quit()
-    
+
 
 if __name__ == "__main__":
     
