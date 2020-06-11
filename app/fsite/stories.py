@@ -25,7 +25,7 @@ if __name__ == '__main__' and __package__ is None:
     print(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 
-from app.common.userAction import evtMouseDown
+import app.common.userAction as userAction
 from app.common import chromeSet
     
 
@@ -37,7 +37,6 @@ def getData(p_args, p_savepath):
     try:
         
         # print(p_args)
-        
         p_job_id = p_args['job_id']
         p_url = p_args['site_url']
         p_brand = p_args['brand']
@@ -53,7 +52,7 @@ def getData(p_args, p_savepath):
         driver.implicitly_wait(3)
         
         # 마우스 스크롤 처리
-        evtMouseDown(driver)
+        userAction.evtMouseDown(driver)
         
         elements = driver.find_elements_by_css_selector('#category-list > div > a > div.product-image > div')
         elements2 = driver.find_elements_by_css_selector('#category-list > div > a > div.description')
@@ -134,7 +133,6 @@ if __name__ == "__main__":
         p_args['product_categori'] = 'new'
         
         getData(p_args, save_path)
-    
     except Exception as ex:
         print('ERROR [stories - main]')
         print(ex)
