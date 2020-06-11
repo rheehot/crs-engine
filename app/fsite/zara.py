@@ -11,13 +11,9 @@ import time
 import csv
 import datetime
 import logging
-import logging.handlers
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from urllib.request import urlopen
-import urllib.request
 import traceback
-from multiprocessing import current_process
+from selenium import webdriver
+from urllib.request import urlopen, Request
 
 import sys
 import io
@@ -37,7 +33,6 @@ from app.common import chromeSet
 _COLLECT_DATE_ = datetime.datetime.now().strftime('%Y%m%d')
 
 def getData(p_args, p_savepath):
-    name = current_process().name
     try:
         logger = logging.getLogger(__name__)
 
@@ -74,11 +69,16 @@ def getData(p_args, p_savepath):
         for slink in link_list:
             driver.get(slink)
 
-            # 상품 가격의 텍스트가 표시될 때까지 명시적으로 최대 5초 대기
-            # https://selenium-python.readthedocs.io/api.html#module-selenium.webdriver.support.expected_conditions
-            wait.until(
-                text_is_not_empty('div.price > span')
-            )
+            try:
+                # 상품 가격의 텍스트가 표시될 때까지 명시적으로 최대 5초 대기
+                # https://selenium-python.readthedocs.io/api.html#module-selenium.webdriver.support.expected_conditions
+                wait.until(
+                    text_is_not_empty('div.price > span')
+                )
+            except:
+                # 5초 이후에도 상품 정보를 로드할 수 없는 경우
+                logger.warning('Data not found')
+                continue
 
             # 상품 정보 추출
             name = driver.find_elements_by_css_selector('h1.product-name')
@@ -120,7 +120,7 @@ def getData(p_args, p_savepath):
             i = 0
             for sub_el in sub_elements:
                 img_src = sub_el.get_attribute('src')
-                req = urllib.request.Request(img_src, headers={'User-Agent': 'Mozilla/5.0'})
+                req = Request(img_src, headers={'User-Agent': 'Mozilla/5.0'})
                 res = urlopen(req).read()
                 
                 img_file_nm = _COLLECT_DATE_ + '_' + p_product_sex + '_' + p_brand + '_' + p_product_categori + '_' + product_data['name'] + '_' + str(i+1) + '.jpg'
