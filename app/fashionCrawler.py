@@ -30,7 +30,7 @@ if __name__ == '__main__' and __package__ is None:
     print(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     
 from app.common.comConfig import conf_info
-from app.fsite import stories
+from app.fsite import stories, zara
 
 
 # _PROCESS_COUNT_ = cpu_count()
@@ -49,8 +49,10 @@ class ImgCrawler():
     logger : Logger
         로거
     brand_list : list
+        크롤링 대상 브랜드 목록
 
     brand_list_nm : object
+        크롤링 대상 브랜드 목록
 
     brand_site_list : object
 
@@ -126,7 +128,7 @@ class ImgCrawler():
             # 크롤러 태스크 실행
             self.crawler_task()
                     
-        except:
+        except Exception as e:
             print('ERROR [ImgCrawler - init] !!!')
         finally:
     
@@ -155,7 +157,7 @@ class ImgCrawler():
         for brand in self.brand_list:
             
             # 테스트용 (특정 브랜드만 수행)
-            if _TEST_MODE_ and brand not in ['stories'] :
+            if _TEST_MODE_ and brand not in ['zara']: # 'stories'
                 continue
             
             scnt = 0
@@ -198,14 +200,9 @@ def do_work(args):
     
     try:
         print('START_JOB ID: %s, %s' % (args['job_id'], args['brand_nm']))
-        
         p_job_id = args['job_id']
         p_site_url = args['site_url']
-        
         p_brand = args['brand']
-        # p_brand_nm = args['brand_nm']
-        # p_product_sex = args['product_sex']
-        # p_product_categori = args['product_categori']
         
         
         # 앤아더스토리즈 크롤링 모듈 호출
