@@ -153,7 +153,8 @@ def getData(p_args, p_savepath):
                     product_data['saved'] = True
                     i += 1
                 except Exception as e:
-                    logger.error('Image download failed:' + e)
+                    logger.error('Image download failed')
+                    logger.error(e)
 
             # 크롤링한 이미지 수 추가
             total_cnt += 1

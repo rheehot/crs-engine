@@ -129,8 +129,6 @@ class attr_must_fn:
             else:
                 return False
 
-            print(self.eval_fn(el_attr))
             return self.eval_fn(el_attr)
         except Exception as e:
-            print(e)
             return False
