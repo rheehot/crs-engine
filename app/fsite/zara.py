@@ -31,11 +31,10 @@ from app.common import chromeSet
 
 # 파일명 : 날짜_성별_브랜드_카테고리_상품명_번호
 _COLLECT_DATE_ = datetime.datetime.now().strftime('%Y%m%d')
+logger = logging.getLogger(__name__)
 
 def getData(p_args, p_savepath):
     try:
-        logger = logging.getLogger(__name__)
-
         p_job_id = p_args['job_id']
         p_url = p_args['site_url']
         p_brand = p_args['brand']
@@ -44,25 +43,28 @@ def getData(p_args, p_savepath):
         p_product_categori = p_args['product_categori']
         
         driver = webdriver.Chrome(executable_path=chromeSet.DRIVER_PATH, options=chromeSet.options)
-        driver.get(p_url)
-    
-        # 웹 페이지 로딩 시 3초간 대기함
+        # 웹 페이지 로딩 시 3초간 대기함 (셀레니움 암묵적 대기)
         driver.implicitly_wait(3)
+        driver.get(p_url)
 
         # 상품 목록 수집
+        # document.querySelectorAll('#products > div > ul > li a').length : 279
         elements = driver.find_elements_by_css_selector('#products > div > ul > li > a')
         logger.info('상품 개수: {}'.format(len(elements)))
 
+        wait = get_webdriver_wait(driver)
+
         link_list = []
         for el in elements:
-            link_list.append(el.get_attribute('href'))
+            url = el.get_attribute('href')
+            qs = el.get_attribute('data-extraquery')
+            full_url = url + '?' + qs
+            link_list.append(full_url)
         
         # link 중복값 제거 
         link_list = list(set(link_list))
         logger.info('Targets: {}'.format(len(link_list)))
 
-        wait = get_webdriver_wait(driver)
-        
         # 상품 설명 추출
         total_cnt = 0
         product_list = []
@@ -106,7 +108,8 @@ def getData(p_args, p_savepath):
             product_data = {
                 "name": name,
                 "color": color,
-                "price": price
+                "price": price,
+                "url": slink
             }
             product_list.append(product_data)
 
@@ -138,7 +141,7 @@ def getData(p_args, p_savepath):
         with open(p_savepath + '/info/' + p_brand + '/' + info_file_nm, mode='a', encoding="utf-8") as product_infos:
             product_writer = csv.writer(product_infos)
             for prod in product_list:
-                product_writer.writerow([prod['name'], prod['color'], prod['price']])
+                product_writer.writerow([prod['name'], prod['color'], prod['price'], prod['url']])
 
         logger.info('END, ' + str(total_cnt))
     except Exception as ex:
@@ -149,9 +152,9 @@ def getData(p_args, p_savepath):
 
 
 if __name__ == "__main__":
+    print(__name__)
     
     try:
-        
         driver = webdriver.Chrome(executable_path=chromeSet.DRIVER_PATH, options=chromeSet.options)
         save_path  = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../data/")
         
@@ -161,12 +164,13 @@ if __name__ == "__main__":
         p_args['brand'] = 'zara'
         p_args['brand_nm'] = 'zara'
         p_args['product_sex'] = 'w'
-        p_args['product_categori'] = 'event'
+        p_args['product_categori'] = 'test'
+        logger.info(save_path)
         
         getData(p_args, save_path)
-    
+
     except Exception as ex:
-        print('ERROR [zara - main]')
-        print(ex)
+        logger.error('ERROR [zara - main]')
+        logger.error(ex)
     finally:
         driver.quit()
