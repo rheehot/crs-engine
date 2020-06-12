@@ -108,3 +108,29 @@ def text_is (selector, text):
     지정된 셀렉터에 해당하는 요소 텍스트가 text 인지 확인 (EC)
     '''
     return EC.text_to_be_present_in_element((By.ByCssSelector, selector), text)
+
+class attr_must_fn:
+    '''
+    지정된 셀렉터 요소의 변경된 속성 값이 평가 (EC)
+    '''
+    def __init__(self, attr, eval_fn, selector=None, el=None):
+        self.selector = selector
+        self.el = el
+        self.attr = attr
+        self.eval_fn = eval_fn
+
+    def __call__(self, driver):
+        try:
+            if self.el:
+                el_attr = self.el.get_attribute(self.attr)
+            elif self.selector:
+                el_attr = EC._find_element(driver, (By.CSS_SELECTOR, self.selector)) \
+                    .get_attribute(self.attr)
+            else:
+                return False
+
+            print(self.eval_fn(el_attr))
+            return self.eval_fn(el_attr)
+        except Exception as e:
+            print(e)
+            return False

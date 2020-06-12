@@ -24,7 +24,7 @@ if __name__ == '__main__' and __package__ is None:
     sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
     print(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from app.common.util import ref_safe, idx_safe, get_webdriver_wait, text_is_not_empty
+from app.common.util import ref_safe, idx_safe, get_webdriver_wait, text_is_not_empty, attr_must_fn
 from app.common.userAction import evtMouseDown
 from app.common import chromeSet
     
@@ -52,15 +52,15 @@ def getData(p_args, p_savepath):
         elements = driver.find_elements_by_css_selector('#products > div > ul > li > a')
         logger.info('상품 개수: {}'.format(len(elements)))
 
-        wait = get_webdriver_wait(driver)
+        wait = get_webdriver_wait(driver, timeout=15)
 
         link_list = []
         for el in elements:
             url = el.get_attribute('href')
             qs = el.get_attribute('data-extraquery')
             full_url = url + '?' + qs
-            link_list.append(full_url)
-        
+            link_list.append(url)
+
         # link 중복값 제거 
         link_list = list(set(link_list))
         logger.info('Targets: {}'.format(len(link_list)))
@@ -72,13 +72,13 @@ def getData(p_args, p_savepath):
             driver.get(slink)
 
             try:
-                # 상품 가격의 텍스트가 표시될 때까지 명시적으로 최대 5초 대기
+                # 상품 가격의 텍스트가 표시될 때까지 명시적으로 최대 timeout초 대기
                 # https://selenium-python.readthedocs.io/api.html#module-selenium.webdriver.support.expected_conditions
                 wait.until(
                     text_is_not_empty('div.price > span')
                 )
             except:
-                # 5초 이후에도 상품 정보를 로드할 수 없는 경우
+                # timeout초 이후에도 상품 정보를 로드할 수 없는 경우
                 logger.warning('Data not found')
                 continue
 
@@ -109,12 +109,15 @@ def getData(p_args, p_savepath):
                 "name": name,
                 "color": color,
                 "price": price,
-                "url": slink
+                "url": slink,
+                "saved": False
             }
             product_list.append(product_data)
 
             logger.info('({}, {}, {}):{}'.format(name, color, price, slink))
             info_file_nm = _COLLECT_DATE_ + '_' + p_product_sex + '_' + p_brand + '_' + p_product_categori + '_' + p_job_id + '.csv'
+
+            time.sleep(3)
 
             # 이미지 영역 추출
             sub_elements = driver.find_elements_by_css_selector('#main-images > div > a > img.image-big._img-zoom._main-image')
@@ -122,38 +125,56 @@ def getData(p_args, p_savepath):
             # 이미지 다운로드
             i = 0
             for sub_el in sub_elements:
-                img_src = sub_el.get_attribute('src')
-                req = Request(img_src, headers={'User-Agent': 'Mozilla/5.0'})
-                res = urlopen(req).read()
-                
-                img_file_nm = _COLLECT_DATE_ + '_' + p_product_sex + '_' + p_brand + '_' + p_product_categori + '_' + product_data['name'] + '_' + str(i+1) + '.jpg'
-                filename = p_savepath + '/images/' + p_brand + '/' + img_file_nm
+                try:
+                    # 자라의 경우 base64 로딩 이미지를 보여주다가,
+                    # 이미지가 로드되면 기존 src 대체함.
+                    # => src 속성에 base64 값이 사라딜
+                    wait.until(
+                        attr_must_fn('src', lambda a: not a.find('base64') != -1, el=sub_el)
+                    )
+                except Exception as e:
+                    traceback.print_exc()
+                    logger.error('EEE!!')
+                    logger.error(e)
+                    pass
 
-                with open(filename.encode('utf-8'), "wb") as f:
-                    f.write(res)
+                try:
+                    img_src = sub_el.get_attribute('src')
+                    logger.info(img_src)
+                    req = Request(img_src, headers={'User-Agent': 'Mozilla/5.0'})
+                    res = urlopen(req).read()
 
-                i += 1
+                    img_file_nm = _COLLECT_DATE_ + '_' + p_product_sex + '_' + p_brand + '_' + p_product_categori + '_' + product_data['name'] + '_' + str(i+1) + '.jpg'
+                    filename = p_savepath + '/images/' + p_brand + '/' + img_file_nm
+
+                    with open(filename.encode('utf-8'), "wb") as f:
+                        f.write(res)
+
+                    product_data['saved'] = True
+                    i += 1
+                except Exception as e:
+                    logger.error('Image download failed:' + e)
 
             # 크롤링한 이미지 수 추가
             total_cnt += 1
-        
+
         # Save data as csv
         with open(p_savepath + '/info/' + p_brand + '/' + info_file_nm, mode='a', encoding="utf-8") as product_infos:
             product_writer = csv.writer(product_infos)
             for prod in product_list:
+                if not prod['saved']:
+                    continue
                 product_writer.writerow([prod['name'], prod['color'], prod['price'], prod['url']])
 
         logger.info('END, ' + str(total_cnt))
     except Exception as ex:
-        print('ERROR [zara - getData]')
+        logger.error('ERROR [zara - getData]')
         traceback.print_exc()
     finally:
         driver.quit()
 
 
 if __name__ == "__main__":
-    print(__name__)
-    
     try:
         driver = webdriver.Chrome(executable_path=chromeSet.DRIVER_PATH, options=chromeSet.options)
         save_path  = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../data/")
