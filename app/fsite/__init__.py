@@ -150,9 +150,9 @@ class CrawlingModule:
             self._logger.error(f'Image save failed :: {e} - {src}')
 
 
-    def sleep(self, time=5):
-        self._logger.info(f'Sleep :: {time} sec..')
-        time.sleep(time)
+    def sleep(self, second=5):
+        self._logger.info(f'Sleep :: {second} sec..')
+        time.sleep(second)
 
 
     def close(self):
