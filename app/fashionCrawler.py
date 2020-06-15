@@ -29,6 +29,7 @@ if __name__ == '__main__' and __package__ is None:
     sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     print(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     
+from app.common import get_logger
 from app.common.comConfig import conf_info
 from app.fsite import stories, zara, hm
 
@@ -46,46 +47,35 @@ class ImgCrawler():
 
     Attributes
     ----------
-    logger : Logger
-        로거
-    brand_list : list
-        크롤링 대상 브랜드 목록
+        logger : Logger
+            로거
+        brand_list : list
+            크롤링 대상 브랜드 목록
 
-    brand_list_nm : object
-        크롤링 대상 브랜드 목록
+        brand_list_nm : object
+            크롤링 대상 브랜드 목록
 
-    brand_site_list : object
+        brand_site_list : object
 
-    brand_site_sex_list : object
+        brand_site_sex_list : object
 
-    brand_site_categori_list : object
+        brand_site_categori_list : object
 
-    site_total_count : int
+        site_total_count : int
 
     Methods
     -------
-    init()
-        크롤링 설정 기준으로 초기 세팅 (데이터 저장 폴더 생성 등)
+        init()
+            크롤링 설정 기준으로 초기 세팅 (데이터 저장 폴더 생성 등)
 
-    crawler_task()
-        브랜드별 크롤링 설정 매핑, 멀티프로세싱 풀 생성 및 작업 수행
+        crawler_task()
+            브랜드별 크롤링 설정 매핑, 멀티프로세싱 풀 생성 및 작업 수행
     """
     
     
     def __init__(self):
-        
-        _log_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../logs/", conf_info.get('init').get('log_file'))
-        logging.basicConfig(
-            format=conf_info.get('init').get('log_format'),
-            level=logging.INFO,
-            # level=logging.DEBUG,
-            stream=sys.stderr)
-            
-        self.logger = logging.getLogger(__name__)
-        
+        self.logger = get_logger(__name__)
         fileMaxByte = 1024 * 1024 * 5 #5MB
-        self.logger.addHandler(logging.handlers.RotatingFileHandler(filename=_log_file,maxBytes=fileMaxByte, backupCount=10))
-        
         
         self.brand_list = conf_info.get('site').keys()
         self.brand_list_nm = {}
@@ -169,6 +159,7 @@ class ImgCrawler():
                 tmp_data['brand_nm'] = self.brand_list_nm[brand]                    # Job Site(브랜드명)
                 tmp_data['product_sex'] = self.brand_site_sex_list[brand][scnt]     # 상품 성별
                 tmp_data['product_categori'] = self.brand_site_categori_list[brand][scnt]   # 상품 카테고리
+                tmp_data['save_path'] = _SAVE_PATH_
                 pool_args.append(tmp_data)
                 scnt += 1
                 job_cnt += 1
@@ -217,7 +208,8 @@ def do_work(args):
         
         # H&M 크롤링 모듈 호출            
         elif p_brand == 'hm':
-            hm.getData(args, _SAVE_PATH_)
+            module = hm.HMModule(args)
+            module.get_data()
         
         # COS 크롤링 모듈 호출            
         elif p_brand == 'cos':
