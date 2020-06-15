@@ -25,7 +25,8 @@ if __name__ == '__main__' and __package__ is None:
     sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
     print(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from app.common.util import ref_safe, idx_safe, get_webdriver_wait, element_exist
+from app.common.util import ref_safe, idx_safe
+from app.common.custom_ec import get_webdriver_wait, element_exist
 from app.common.userAction import evtMouseDown
 from app.common import chromeSet
 
