@@ -23,6 +23,7 @@ XXXModule extends CrawlingModule
     save_image(): 이미지 다운로드
     sleep(): 스레드 대기
 '''
+import os
 import csv
 import time
 import datetime
@@ -94,9 +95,10 @@ class CrawlingModule:
         product_sex = config['product_sex']
         categori = config['product_categori']
         self._csv_file = f'{self._COLLECT_DATE_}_{product_sex}_{brand}_{categori}_{job_id}.csv'
+        self._info_path = f'{save_path}info/{brand}/'
         
         # Image File
-        self._image_path = f'{save_path}/images/{brand}/'
+        self._image_path = f'{save_path}images/{brand}/'
         self._logger.info(f'__init__ :: csv={self._csv_file}')
 
     def start(self):
@@ -118,18 +120,15 @@ class CrawlingModule:
         price = meta['price']
         url = meta['url']
         self._meta_list.append(meta)
-        self._logger(f'Metadata added :: ({name}, {color}, {price}) from {url}')
+        self._logger.info(f'Metadata added :: ({name}, {color}, {price}) from {url}')
 
 
     def save_meta(self):
         self._logger.info(f'Save rows :: {len(self._meta_list)}')
-        with open(self._csv_file, mode='a', encoding='utf-8') as f:
+        with open(os.path.join(self._info_path, self._csv_file), mode='a', encoding='utf-8') as f:
             product_writer = csv.writer(f)
 
             for meta in self._meta_list:
-                if not meta['saved']:
-                    continue
-
                 product_writer.writerow([meta['name'], meta['color'], meta['price'], meta['url']])
 
         self._logger.info('Metadata :: Saved!')
@@ -137,7 +136,7 @@ class CrawlingModule:
 
     def save_image(self, src, filename):
         try:
-            filename = self._image_path + filename
+            filename = os.path.join(self._image_path, filename)
             req = Request(src, headers={'User-Agent': 'Mozilla/5.0'})
             res = urlopen(req).read()
 
@@ -156,7 +155,7 @@ class CrawlingModule:
 
 
     def close(self):
-        self._logger(f'Close :: Total image(s): {self._count} / Meta: {self.len(self._meta_list)}')
+        self._logger.info(f'Close :: Total image(s): {self._count} / Meta: {self.len(self._meta_list)}')
         try:
             self._driver.quit()
         except:
