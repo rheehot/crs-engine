@@ -7,17 +7,8 @@
 __author__ = 'SEOK'
 
 import os
-import time
-import csv
-import datetime
-import logging
-import logging.handlers
-import traceback
-from selenium import webdriver
-from urllib.request import urlopen, Request
-
-import sys
 import io
+import sys
 sys.stdout = io.TextIOWrapper(sys.stdout.detach(), encoding = 'utf-8')
 sys.stderr = io.TextIOWrapper(sys.stderr.detach(), encoding = 'utf-8')
 
@@ -28,9 +19,6 @@ if __name__ == '__main__' and __package__ is None:
 from app.fsite import CrawlingModule
 from app.common.util import ref_safe, idx_safe
 from app.common.custom_ec import element_exist
-
-# 파일명 : 날짜_성별_브랜드_카테고리_상품명_번호
-_COLLECT_DATE_ = datetime.datetime.now().strftime('%Y%m%d')
 
 class HMModule(CrawlingModule):
     def get_data(self):
@@ -138,9 +126,6 @@ class HMModule(CrawlingModule):
                 self.save_image(img_src, img_file_name)
                 i += 1
 
-            # 크롤링한 이미지 수 추가
-            self._count += 1
-
         # Save data as csv
         self.save_meta()
 
@@ -157,5 +142,4 @@ if __name__ == "__main__":
     p_args['product_categori'] = 'test'
     p_args['save_path'] = save_path
 
-    module = HMModule(p_args)
-    module.start()
+    HMModule(p_args).start()

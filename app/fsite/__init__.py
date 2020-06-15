@@ -102,6 +102,10 @@ class CrawlingModule:
         self._logger.info(f'__init__ :: csv={self._csv_file}')
 
     def start(self):
+        '''
+        크롤링 작업 시작
+         - get_data() 메소드 호출 및 에러 핸들링 포함
+        '''
         try:
             self.get_data()
         except Exception as e:
@@ -111,10 +115,25 @@ class CrawlingModule:
 
 
     def get_data(self, args, save):
+        '''
+        브랜트 웹 페이지별 데이터 수집 로직 구현 (오버라이드 필수)
+        '''
         raise NotImplementedError('CrawlingModule :: get_data()')
 
 
     def add_meta(self, meta):
+        '''
+        상품 정보 리스트에 정보 추가
+
+        Arguments
+        =========
+            meta
+                상품 메타 정보
+                 - name: 상품명
+                 - color: 상품 색상
+                 - price: 상품 가격
+                 - url: 상품 페이지 URL
+        '''
         name = meta['name']
         color = meta['color']
         price = meta['price']
@@ -124,6 +143,9 @@ class CrawlingModule:
 
 
     def save_meta(self):
+        '''
+        상품 정보 리스트에 존재하는 데이터 CSV 파일로 저장
+        '''
         self._logger.info(f'Save rows :: {len(self._meta_list)}')
         with open(os.path.join(self._info_path, self._csv_file), mode='a', encoding='utf-8') as f:
             product_writer = csv.writer(f)
@@ -135,6 +157,17 @@ class CrawlingModule:
 
 
     def save_image(self, src, filename):
+        '''
+        지정된 소스의 이미지 다운로드 후 저장
+
+        Arguments
+        =========
+            src
+                이미지 소스
+            
+            filename
+                저장할 이미지 파일 명
+        '''
         try:
             filename = os.path.join(self._image_path, filename)
             req = Request(src, headers={'User-Agent': 'Mozilla/5.0'})
@@ -150,11 +183,23 @@ class CrawlingModule:
 
 
     def sleep(self, second=5):
+        '''
+        크롤링 프로세스 일시 블로킹
+
+        Arguments
+        ========
+            second
+                블로킹할 시간 (초) - 기본값: 5
+
+        '''
         self._logger.info(f'Sleep :: {second} sec..')
         time.sleep(second)
 
 
     def close(self):
+        '''
+        셀레니움 리소스 정리
+        '''
         self._logger.info(f'Close :: Total image(s): {self._count} / Meta: {self.len(self._meta_list)}')
         try:
             self._driver.quit()

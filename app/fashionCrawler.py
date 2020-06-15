@@ -7,23 +7,12 @@
 __author__ = 'SEOK'
 
 import os
-import logging
-import logging.handlers
-import time
-import csv
-import datetime
-
-from urllib.request import urlopen
-import urllib.request
-
-import sys
 import io
+import sys
+import datetime
+from multiprocessing import Process, Queue, cpu_count, Pool
 sys.stdout = io.TextIOWrapper(sys.stdout.detach(), encoding = 'utf-8')
 sys.stderr = io.TextIOWrapper(sys.stderr.detach(), encoding = 'utf-8')
-
-from apscheduler.jobstores.base import JobLookupError
-from apscheduler.schedulers.background import BackgroundScheduler
-from multiprocessing import Process, Queue, cpu_count, Pool
 
 if __name__ == '__main__' and __package__ is None:
     sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -195,21 +184,17 @@ def do_work(args):
         p_site_url = args['site_url']
         p_brand = args['brand']
         
-        
         # 앤아더스토리즈 크롤링 모듈 호출
         if p_brand == 'stories':
-            # stories.getData(p_site_url, _SAVE_PATH_, p_job_id)
-            stories.getData(args, _SAVE_PATH_)
+            stories.StoriesModule(args).start()
 
         # 자라 크롤링 모듈 호출            
         elif p_brand == 'zara':
-            # zara.getData(p_site_url, _SAVE_PATH_, p_job_id)
-            zara.getData(args, _SAVE_PATH_)
+            zara.ZARAModule(args).start()
         
         # H&M 크롤링 모듈 호출            
         elif p_brand == 'hm':
-            module = hm.HMModule(args)
-            module.get_data()
+            hm.HMModule(args).start()
         
         # COS 크롤링 모듈 호출            
         elif p_brand == 'cos':
