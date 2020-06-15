@@ -29,6 +29,7 @@ import time
 import datetime
 from urllib.request import urlopen, Request
 from app.common.custom_ec import get_webdriver_wait
+from app.common.util import to_valid_filename
 from app.common import get_logger, get_driver
 
 class NotImplementedError(Exception):
@@ -127,7 +128,7 @@ class CrawlingModule:
 
         Arguments
         =========
-            meta
+            meta : object
                 상품 메타 정보
                  - name: 상품명
                  - color: 상품 색상
@@ -160,16 +161,16 @@ class CrawlingModule:
         '''
         지정된 소스의 이미지 다운로드 후 저장
 
-        Arguments
+        Parameters
         =========
-            src
+            src : str
                 이미지 소스
             
-            filename
+            filename : str
                 저장할 이미지 파일 명
         '''
         try:
-            filename = os.path.join(self._image_path, filename)
+            filename = to_valid_filename(os.path.join(self._image_path, filename))
             req = Request(src, headers={'User-Agent': 'Mozilla/5.0'})
             res = urlopen(req).read()
 
@@ -186,9 +187,9 @@ class CrawlingModule:
         '''
         크롤링 프로세스 일시 블로킹
 
-        Arguments
+        Parameters
         ========
-            second
+            second : int
                 블로킹할 시간 (초) - 기본값: 5
 
         '''
