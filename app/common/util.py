@@ -132,3 +132,18 @@ class attr_must_fn:
             return self.eval_fn(el_attr)
         except Exception as e:
             return False
+
+class element_exist:
+    '''
+    지정된 셀렉터 요소가 존재하는지 확인 (EC)
+    '''
+    def __init__(self, selector):
+        self.selector = selector
+    
+    def __call__(self, driver):
+        try:
+            el = EC._find_element(driver, (By.CSS_SELECTOR, self.selector))
+
+            return len(el)
+        except Exception as e:
+            return False
