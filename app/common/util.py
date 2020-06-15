@@ -18,7 +18,11 @@ def ref_safe(o, key, default=''):
         해당 객체의 속성에 접근할 수 없는 경우 반환할 기본값
     '''
     try:
-        return getattr(o, key)
+        v = getattr(o, key)
+        if v:
+            return v
+        else:
+            return default
     except:
         return default
 
