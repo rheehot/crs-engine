@@ -11,6 +11,7 @@ import time
 import csv
 import datetime
 import logging
+import logging.handlers
 import traceback
 from selenium import webdriver
 from urllib.request import urlopen, Request
@@ -24,14 +25,15 @@ if __name__ == '__main__' and __package__ is None:
     sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
     print(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from app.common.util import ref_safe, idx_safe, get_webdriver_wait, text_is_not_empty
+from app.common.util import ref_safe, idx_safe, get_webdriver_wait, element_exist
 from app.common.userAction import evtMouseDown
 from app.common import chromeSet
-    
+
 
 # 파일명 : 날짜_성별_브랜드_카테고리_상품명_번호
 _COLLECT_DATE_ = datetime.datetime.now().strftime('%Y%m%d')
 logger = logging.getLogger(__name__)
+logger.addHandler(logging.handlers.RotatingFileHandler(filename='test.log',maxBytes=(1024 * 1024 * 5), backupCount=10))
 
 BASE_URL = 'https://www2.hm.com'
 
@@ -44,41 +46,60 @@ def getData(p_args, p_savepath):
         p_product_sex = p_args['product_sex']
         p_product_categori = p_args['product_categori']
 
-
-        product_anchors = []
-        def feeder():
-            driver = webdriver.Chrome(executable_path=chromeSet.DRIVER_PATH, options=chromeSet.options)
-            # 웹 페이지 로딩 시 3초간 대기함 (셀레니움 암묵적 대기)
-            driver.implicitly_wait(3)
-            driver.get(p_url)
+        link_list = []
+        def product_parser(driver):
+            '''
+            H&M 모든 상품 목록 추출 (더 보기 버튼 처리)
+            '''
+            more_btn = driver.find_elements_by_css_selector('button.js-load-more')
+            if len(more_btn) >= 1:
+                more_btn = idx_safe(more_btn, 0)
 
             while True:
-                more_btn = driver.find_elements_by_css_selector('button.button js-load-more')
-
                 # 더 보기 버튼이 보이는 경우 (상품이 더 있음)
-                if not more_btn.is_displayed():
+                if not (more_btn.is_displayed()):
                     break
 
                 more_btn.click()
+                time.sleep(3)
 
-            product_anchors = driver.find_elements_by_css_selector('ul.products-listing > li > a')
+            # 상품 링크 태그 추출
+            product_anchors = driver.find_elements_by_css_selector('ul.products-listing li div.image-container > a')
 
-        # 상품 모두 추출
-        feeder()
+            # 상품 페이지 정보 추출
+            product_list = []
+            for el in product_anchors:
+                url = el.get_attribute('href')
+                product_list.append(url)
+
+            # 상품별 색상 정보 추출 (색상별 상품 페이지 URL)
+            for product_url in product_list:
+                logger.info(product_url)
+                driver.get(product_url)
+
+                # 색상 정보 로드 대기
+                try:
+                    wait.until(
+                        element_exist('div.product-colors.loaded')
+                    )
+                except:
+                    continue
+                
+                product_colors = driver.find_elements_by_css_selector('li.mini-slider-group > ul > li > a')
+
+                for product_color in product_colors:
+                    href = product_color.get_attribute('href')
+                    link_list.append(href)
+                    logger.info('Find: ' + href)
 
         driver = webdriver.Chrome(executable_path=chromeSet.DRIVER_PATH, options=chromeSet.options)
         # 웹 페이지 로딩 시 3초간 대기함 (셀레니움 암묵적 대기)
         driver.implicitly_wait(3)
         driver.get(p_url)
+        wait = get_webdriver_wait(driver, timeout=10)
 
-        logger.info('상품 개수: {}'.format(len(product_anchors)))
-        wait = get_webdriver_wait(driver)
-
-        # 상품 상세 페이지에서 모든 색상별 페이지 추출
-        link_list = []
-        for el in product_anchors:
-            url = el.get_attribute('href')
-            link_list.append(BASE_URL + url)
+        # 상품 모두 추출
+        product_parser(driver)
 
         # link 중복값 제거 
         link_list = list(set(link_list))
@@ -87,6 +108,8 @@ def getData(p_args, p_savepath):
         # 상품 설명 추출
         total_cnt = 0
         product_list = []
+        info_file_nm = _COLLECT_DATE_ + '_' + p_product_sex + '_' + p_brand + '_' + p_product_categori + '_' + p_job_id + '.csv'
+
         for slink in link_list:
             driver.get(slink)
 
@@ -105,7 +128,7 @@ def getData(p_args, p_savepath):
                 price = idx_safe(price, 0)
  
             name = ref_safe(name, 'text')
-            color = ref_safe(color, 'text')
+            color = ref_safe(color, 'text', default='unknown')
             price = ref_safe(price, 'text')
 
             product_data = {
@@ -117,7 +140,6 @@ def getData(p_args, p_savepath):
             product_list.append(product_data)
 
             logger.info('({}, {}, {}):{}'.format(name, color, price, slink))
-            info_file_nm = _COLLECT_DATE_ + '_' + p_product_sex + '_' + p_brand + '_' + p_product_categori + '_' + p_job_id + '.csv'
 
             # 이미지 영역 추출
             # 메인
@@ -128,7 +150,8 @@ def getData(p_args, p_savepath):
             # 이미지 다운로드
             i = 0
             for sub_el in sub_elements:
-                img_src = 'https:' + sub_el.get_attribute('src')
+                img_src = sub_el.get_attribute('src')
+                logger.info(img_src)
                 req = Request(img_src, headers={'User-Agent': 'Mozilla/5.0'})
                 res = urlopen(req).read()
 
@@ -164,7 +187,7 @@ if __name__ == "__main__":
         
         p_args = {}
         p_args['job_id'] = '1'
-        p_args['site_url'] = 'https://www.hm.com/kr/ko/woman-event-l1053.html?v1=1478211'
+        p_args['site_url'] = 'https://www2.hm.com/ko_kr/ladies/new-arrivals/clothes.html'
         p_args['brand'] = 'hm'
         p_args['brand_nm'] = 'hm'
         p_args['product_sex'] = 'w'

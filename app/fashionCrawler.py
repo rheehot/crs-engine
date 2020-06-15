@@ -30,7 +30,7 @@ if __name__ == '__main__' and __package__ is None:
     print(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     
 from app.common.comConfig import conf_info
-from app.fsite import stories, zara
+from app.fsite import stories, zara, hm
 
 
 # _PROCESS_COUNT_ = cpu_count()
@@ -157,7 +157,7 @@ class ImgCrawler():
         for brand in self.brand_list:
             
             # 테스트용 (특정 브랜드만 수행)
-            if _TEST_MODE_ and brand not in ['zara']: # 'stories'
+            if _TEST_MODE_ and brand not in ['hm']: # 'stories'
                 continue
             
             scnt = 0
@@ -217,7 +217,7 @@ def do_work(args):
         
         # H&M 크롤링 모듈 호출            
         elif p_brand == 'hm':
-            pass
+            hm.getData(args, _SAVE_PATH_)
         
         # COS 크롤링 모듈 호출            
         elif p_brand == 'cos':
