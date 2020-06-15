@@ -144,6 +144,9 @@ class element_exist:
         try:
             el = EC._find_element(driver, (By.CSS_SELECTOR, self.selector))
 
-            return len(el)
+            if isinstance(el, list):
+                return len(el)
+            else:
+                return not not el
         except Exception as e:
             return False
