@@ -33,9 +33,6 @@ from app.common import chromeSet
 # 파일명 : 날짜_성별_브랜드_카테고리_상품명_번호
 _COLLECT_DATE_ = datetime.datetime.now().strftime('%Y%m%d')
 logger = logging.getLogger(__name__)
-logger.addHandler(logging.handlers.RotatingFileHandler(filename='test.log',maxBytes=(1024 * 1024 * 5), backupCount=10))
-
-BASE_URL = 'https://www2.hm.com'
 
 def getData(p_args, p_savepath):
     try:
