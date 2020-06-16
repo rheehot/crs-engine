@@ -172,7 +172,7 @@ class CrawlingModule:
             num : int
                 여러 이미지가 존재하는 경우를 위한 구분 번호 (기본값: 0)
         '''
-        color_str = f'({color})_' if bool(color) else ''
+        color_str = f'({color})_' if bool(color) and color != 'unknown' else '_'
         return to_valid_filename(
             self._COLLECT_DATE_ + '_' + \
             self._config['product_sex'] + '_' + \
