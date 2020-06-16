@@ -81,7 +81,7 @@ class CrawlingModule:
             - start() 메소드에서 자동 호출하므로 명시적으로 사용하지 않아도 됨
     '''
     def __init__(self, config):
-        self._logger = get_logger(__name__, config['job_id'])
+        self._logger = get_logger(config['brand'], config['job_id'])
         self._driver = get_driver()
         self._wait = get_webdriver_wait(self._driver, timeout=10)
         self._COLLECT_DATE_ = datetime.datetime.now().strftime('%Y%m%d')
@@ -126,7 +126,7 @@ class CrawlingModule:
         '''
         상품 정보 리스트에 정보 추가
 
-        Arguments
+        Parameters
         =========
             meta : object
                 상품 메타 정보
@@ -157,6 +157,31 @@ class CrawlingModule:
         self._logger.info('Metadata :: Saved!')
 
 
+    def get_image_filename(self, product_name, color='', num=0):
+        '''
+        저장할 이미지 파일명 생성
+
+        Parameters
+        ==========
+            product_name : str
+                제품명
+
+            color : str
+                제품 색상
+            
+            num : int
+                여러 이미지가 존재하는 경우를 위한 구분 번호 (기본값: 0)
+        '''
+        color_str = f'({color})_' if bool(color) else ''
+        return to_valid_filename(
+            self._COLLECT_DATE_ + '_' + \
+            self._config['product_sex'] + '_' + \
+            self._config['brand_nm'] + '_' + \
+            self._config['product_categori'] + '_' + \
+            product_name + color_str + str(num) + '.jpg'
+        )
+
+
     def save_image(self, src, filename):
         '''
         지정된 소스의 이미지 다운로드 후 저장
@@ -170,7 +195,7 @@ class CrawlingModule:
                 저장할 이미지 파일 명
         '''
         try:
-            filename = to_valid_filename(os.path.join(self._image_path, filename))
+            filename = os.path.join(self._image_path, filename)
             req = Request(src, headers={'User-Agent': 'Mozilla/5.0'})
             res = urlopen(req).read()
 

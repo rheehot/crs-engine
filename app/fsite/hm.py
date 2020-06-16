@@ -122,7 +122,7 @@ class HMModule(CrawlingModule):
             i = 0
             for img_el in img_elements:
                 img_src = img_el.get_attribute('src')
-                img_file_name = product_data['name'] + '_' + str(i + 1) + '.jpg'
+                img_file_name = self.get_image_filename(product_data['name'], color=product_data['color'], num=(i + 1))
                 self.save_image(img_src, img_file_name)
                 i += 1
 

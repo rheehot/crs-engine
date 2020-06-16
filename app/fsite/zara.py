@@ -103,7 +103,7 @@ class ZARAModule(CrawlingModule):
                     continue
 
                 img_src = img_el.get_attribute('src')
-                img_file_name = product_data['name'] + '_' + str(i + 1) + '.jpg'
+                img_file_name = self.get_image_filename(product_data['name'], color=product_data['name'], num=(i + 1))
                 self.save_image(img_src, img_file_name)
 
         self.save_meta()

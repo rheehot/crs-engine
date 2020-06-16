@@ -33,7 +33,6 @@ class StoriesModule(CrawlingModule):
         elements2 = self._driver.find_elements_by_css_selector('#category-list > div > a > div.description')
         
         # 상품 설명 추출
-        names = []
         for el2 in elements2:
             el_title = el2.find_elements_by_css_selector('div.product-title > label')
             el_colr = el2.find_elements_by_css_selector('div.product-colours')
@@ -47,7 +46,6 @@ class StoriesModule(CrawlingModule):
             # print('product color: {}'.format(product_color))
             # print('product price: {}'.format(product_price))
 
-            names.append(product_name)
             self.add_meta({
                 "name": product_name,
                 "color": product_color,
@@ -59,7 +57,8 @@ class StoriesModule(CrawlingModule):
         # 상품 이미지 추출
         for el in elements:
             # 파일명 : 날짜_성별_브랜드_카테고리_상품명_번호
-            img_file_nm = names[i] + '_' + str(i + 1) + '.jpg'
+            current_meta = self._meta_list[i]
+            img_file_nm = self.get_image_filename(current_meta['name'], color=current_meta['color'], num=(i + 1))
             el_product = el.find_elements_by_css_selector('img')
             el_product = idx_safe(el_product, 0)
             src = el_product.get_attribute('src')
