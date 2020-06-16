@@ -199,7 +199,7 @@ class CrawlingModule:
             req = Request(src, headers={'User-Agent': 'Mozilla/5.0'})
             res = urlopen(req).read()
 
-            with open(filename.encode('utf-8'), 'wb') as f:
+            with open(filename, 'wb') as f:
                 f.write(res)
 
             self._logger.info(f'Image saved :: {filename}')

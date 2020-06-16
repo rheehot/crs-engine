@@ -71,4 +71,5 @@ def to_valid_filename(s):
         s : str
             변환할 파일명
     '''
-    return re.sub(r'[^a-zA-Z0-9가-힣.,\/\(\)]', '_', s)
+    s = re.sub(r'\/', ',', s)
+    return re.sub(r'[^a-zA-Z0-9가-힣.,\(\)]', '_', s)
