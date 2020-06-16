@@ -72,9 +72,9 @@ class ZARAModule(CrawlingModule):
             color = ref_safe(color, 'text', default='unknown')
             price = ref_safe(price, 'text')
 
-            # 상품 이름이 없는 경우 문제가 발생한 것으로 판단하고 다음 상품 진행
+            # 상품 가격이 없는 경우 문제가 발생한 것으로 판단하고 다음 상품 진행
             if not price:
-                self._logger.warning('No product name: {}'.format(slink))
+                self._logger.warning('Product not found: {}'.format(slink))
                 continue
 
             product_data = {

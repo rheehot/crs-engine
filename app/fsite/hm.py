@@ -104,6 +104,11 @@ class HMModule(CrawlingModule):
             color = ref_safe(color, 'text', default='unknown')
             price = ref_safe(price, 'text')
 
+            # 제품을 찾을 수 없는 경우 건너뛰기
+            if not name:
+                self._logger.warning('Product not found: {}'.format(slink))
+                continue
+
             product_data = {
                 "name": name,
                 "color": color,
