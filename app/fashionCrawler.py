@@ -20,7 +20,7 @@ if __name__ == '__main__' and __package__ is None:
     
 from app.common import get_logger
 from app.common.comConfig import conf_info
-from app.fsite import stories, zara, hm
+from app.fsite import stories, zara, hm, cos
 
 
 # _PROCESS_COUNT_ = cpu_count()
@@ -136,7 +136,7 @@ class ImgCrawler():
         for brand in self.brand_list:
             
             # 테스트용 (특정 브랜드만 수행)
-            if _TEST_MODE_ and brand not in ['hm']: # 'stories'
+            if _TEST_MODE_ and brand not in ['cos']: # 'stories'
                 continue
             
             scnt = 0
@@ -198,7 +198,7 @@ def do_work(args):
         
         # COS 크롤링 모듈 호출            
         elif p_brand == 'cos':
-            pass
+            cos.COSModule(args).start()
         
         # Net-A-Porter 크롤링 모듈 호출            
         elif p_brand == 'netaporter':

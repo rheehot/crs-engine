@@ -31,32 +31,47 @@ class COSModule(CrawlingModule):
 
         def parser():
             els = []
-            prev_count = 0
-            userAction.evtMouseDown(self._driver)
+            prev_count = -1
             prev_time = datetime.datetime.now()
+            waiting = 15
 
             # 무한 스크롤 대기
             while True:
+                userAction.evtScrollDown(self._driver)
                 els = self._driver.find_elements_by_css_selector('#category-list > div.column > a')
                 no_more = True if prev_count == len(els) else False
                 prev_count = len(els)
-                self._logger.info(f'Products found: {prev_count}')
-                self.sleep(2)
 
                 if not no_more:
                     prev_time = datetime.datetime.now()
 
                 # 30초동안 새로운 상품이 추출되지 않는 경우 마지막 페이지로 간주함
-                if no_more and (datetime.datetime.now() - prev_time) >= 30:
+                delta = (datetime.datetime.now() - prev_time).seconds
+                if no_more and delta >= 15:
                     self._logger.info('No more products.')
                     break
-                else:
+                elif not no_more:
                     prev_time = datetime.datetime.now()
 
+                self._logger.info(f'Products found: {prev_count}, [Waiting... {delta}/{waiting}s]')
+                self.sleep(2)
+
+            hrefs = []
             for el in els:
-                href = el.get_attribute('href')
-                link_list.append('href')
-                self._logger.info(f'Parsed product URL :: {href}')
+                hrefs.append(el.get_attribute('href'))
+
+            for href in hrefs:
+                self._driver.get(href)
+                href = href.split('?')[0]
+
+                lis = self._driver.find_elements_by_css_selector('ul.options > li')
+                for li in lis:
+                    color_code = li.get_attribute('data-value')
+                    prod_url = href + '?slitmCd=' + color_code
+                    link_list.append(prod_url)
+                    self._logger.info(f'Parsed product URL :: {prod_url}')
+
+        parser()
 
         # link 중복값 제거
         link_list = list(set(link_list))
@@ -69,7 +84,7 @@ class COSModule(CrawlingModule):
 
             # 상품 정보 추출
             name = self._driver.find_element_by_id('product-detail-name')
-            color = self._driver.find_element_by_css_selector('#pdpSelectedColor span')
+            color = self._driver.find_elements_by_css_selector('div.color-section label > span')
             price = self._driver.find_element_by_id('prdDetailPrice')
 
             if isinstance(name, list):
