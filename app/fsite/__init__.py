@@ -27,6 +27,7 @@ import os
 import csv
 import time
 import datetime
+import traceback
 from urllib.request import urlopen, Request
 from app.common.custom_ec import get_webdriver_wait
 from app.common.util import to_valid_filename
@@ -111,6 +112,7 @@ class CrawlingModule:
             self.get_data()
         except Exception as e:
             self._logger.error(f'CRITICAL ERROR :: {e}')
+            traceback.print_stack()
         finally:
             self.close()
 

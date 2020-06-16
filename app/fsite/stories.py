@@ -23,10 +23,11 @@ from app.common.util import ref_safe, idx_safe
 from app.common.custom_ec import element_exist
 
 class StoriesModule(CrawlingModule):
-    def getData(self):
+    def get_data(self):
         self._driver.get(self._config['site_url'])
         
         # 마우스 스크롤 처리
+        self._logger.info('Scrolling... please wait')
         userAction.evtMouseDown(self._driver)
         
         elements = self._driver.find_elements_by_css_selector('#category-list > div > a > div.product-image > div')

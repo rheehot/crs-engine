@@ -21,7 +21,7 @@ from app.common.util import ref_safe, idx_safe
 from app.common.custom_ec import text_is_not_empty, attr_must_fn
 
 class ZARAModule(CrawlingModule):
-    def getData(self):
+    def get_data(self):
         self._driver.get(self._config['site_url'])
 
         # 상품 목록 수집
@@ -105,6 +105,7 @@ class ZARAModule(CrawlingModule):
                 img_src = img_el.get_attribute('src')
                 img_file_name = self.get_image_filename(product_data['name'], color=product_data['name'], num=(i + 1))
                 self.save_image(img_src, img_file_name)
+                i += 1
 
         self.save_meta()
 
