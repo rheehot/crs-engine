@@ -9,6 +9,7 @@ __author__ = 'GHLEE'
 import os
 import io
 import sys
+import datetime
 sys.stdout = io.TextIOWrapper(sys.stdout.detach(), encoding = 'utf-8')
 sys.stderr = io.TextIOWrapper(sys.stderr.detach(), encoding = 'utf-8')
 
@@ -16,80 +17,60 @@ if __name__ == '__main__' and __package__ is None:
     sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
     print(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
+import app.common.userAction as userAction
 from app.fsite import CrawlingModule
 from app.common.util import ref_safe, idx_safe
 from app.common.custom_ec import element_exist
 
-class HMModule(CrawlingModule):
+class COSModule(CrawlingModule):
     def get_data(self):
         # 상품 페이지 URL 리스트
         link_list = []
-        def parse_products():
-            '''
-            H&M 모든 상품 목록 추출 (더 보기 버튼 처리)
-            '''
-            self._driver.get(self._config['site_url'])
 
-            # 더 보기 버튼
-            more_btn = self._driver.find_elements_by_css_selector('button.js-load-more')
-            
-            if len(more_btn) >= 1:
-                more_btn = idx_safe(more_btn, 0)
+        self._driver.get(self._config['site_url'])
 
+        def parser():
+            els = []
+            prev_count = 0
+            userAction.evtMouseDown(self._driver)
+            prev_time = datetime.datetime.now()
+
+            # 무한 스크롤 대기
             while True:
-                # 더 보기 버튼이 보이는 경우 (상품이 더 있음)
-                if not (more_btn.is_displayed()):
+                els = self._driver.find_elements_by_css_selector('#category-list > div.column > a')
+                no_more = True if prev_count == len(els) else False
+                prev_count = len(els)
+                self._logger.info(f'Products found: {prev_count}')
+                self.sleep(2)
+
+                if not no_more:
+                    prev_time = datetime.datetime.now()
+
+                # 30초동안 새로운 상품이 추출되지 않는 경우 마지막 페이지로 간주함
+                if no_more and (datetime.datetime.now() - prev_time) >= 30:
+                    self._logger.info('No more products.')
                     break
+                else:
+                    prev_time = datetime.datetime.now()
 
-                more_btn.click()
-                self.sleep(3)
+            for el in els:
+                href = el.get_attribute('href')
+                link_list.append('href')
+                self._logger.info(f'Parsed product URL :: {href}')
 
-            # 상품 링크 태그 추출
-            product_anchors = self._driver.find_elements_by_css_selector('ul.products-listing li div.image-container > a')
-
-            # 상품 페이지 정보 추출
-            product_list = []
-            for el in product_anchors:
-                url = el.get_attribute('href')
-                product_list.append(url)
-
-            # 상품별 색상 정보 추출 (색상별 상품 페이지 URL)
-            for product_url in product_list:
-                self._driver.get(product_url)
-
-                # 색상 정보 로드 대기
-                try:
-                    self._wait.until(
-                        element_exist('div.product-colors.loaded')
-                    )
-                except:
-                    continue
-                
-                product_colors = self._driver.find_elements_by_css_selector('li.mini-slider-group > ul > li > a')
-
-                for product_color in product_colors:
-                    href = product_color.get_attribute('href')
-                    link_list.append(href)
-                    self._logger.info(f'Parsed product URL :: {href}')
-
-
-        # 상품 모두 추출
-        parse_products()
-
-        # link 중복값 제거 
+        # link 중복값 제거
         link_list = list(set(link_list))
         self._logger.info('Products: {}'.format(len(link_list)))
 
         # 상품 상세정보 추출/이미지 다운로드
-        total_cnt = 0
         product_list = []
         for slink in link_list:
             self._driver.get(slink)
 
             # 상품 정보 추출
-            name = self._driver.find_elements_by_css_selector('section.name-price h1.primary')
-            color = self._driver.find_elements_by_css_selector('div.product-colors h3.product-input-label')
-            price = self._driver.find_elements_by_css_selector('section.name-price span.price-value')
+            name = self._driver.find_element_by_id('product-detail-name')
+            color = self._driver.find_element_by_css_selector('#pdpSelectedColor span')
+            price = self._driver.find_element_by_id('prdDetailPrice')
 
             if isinstance(name, list):
                 name = idx_safe(name, 0)
@@ -118,10 +99,7 @@ class HMModule(CrawlingModule):
             self.add_meta(product_data)
 
             # 이미지 영역 추출
-            # 메인
-            img_elements = self._driver.find_elements_by_css_selector('figure.product-detail-images img')
-            # 서브
-            img_elements += self._driver.find_elements_by_css_selector('figure.pdp-secondary-image > img')
+            img_elements = self._driver.find_elements_by_css_selector('div.main-image-wrapper > ul > li img')
 
             # 이미지 다운로드 (동일 상품에 여러 이미지가 있는 경우, 파일명 뒤 숫자로 구분)
             i = 0
@@ -140,11 +118,11 @@ if __name__ == "__main__":
     
     p_args = {}
     p_args['job_id'] = '1'
-    p_args['site_url'] = 'https://www2.hm.com/ko_kr/ladies/new-arrivals/clothes.html'
-    p_args['brand'] = 'hm'
-    p_args['brand_nm'] = 'hm'
+    p_args['site_url'] = 'https://www.cosstores.com/kr_krw/women/new-arrivals.html'
+    p_args['brand'] = 'cos'
+    p_args['brand_nm'] = 'cos'
     p_args['product_sex'] = 'w'
     p_args['product_categori'] = 'test'
     p_args['save_path'] = save_path
 
-    HMModule(p_args).start()
+    COSModule(p_args).start()

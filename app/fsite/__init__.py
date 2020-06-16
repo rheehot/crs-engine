@@ -226,7 +226,7 @@ class CrawlingModule:
         '''
         셀레니움 리소스 정리
         '''
-        self._logger.info(f'Close :: Total image(s): {self._count} / Meta: {self.len(self._meta_list)}')
+        self._logger.info(f'Close :: Total image(s): {self._count} / Meta: {len(self._meta_list)}')
         try:
             self._driver.quit()
         except:
